@@ -53,16 +53,16 @@ body, html{
 	height: 100%;
 }
 header{
-	height: 150px;
+	height: 20px;
 	width: 100%;
 	background-color: yellow;
 }
 .container{
 	width: 500px;
 	margin: 0 auto;
-	background-color: orange;
+	/*background-color: orange;*/
 }
-canvas{
+#game{
 	width: 500px;
 	height: 500px;
 }
