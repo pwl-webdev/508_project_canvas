@@ -14,14 +14,17 @@ var enemyInterval = 1000;
 var nextEnemy = Math.floor(Math.random()*enemyInterval);
 var enemyVelocity = 0.5;
 var enemyXFactor = 0.15;
+var enemyExplosions = [];
+var enemyExplosionsRadius = 20;
+var enemyExplosionStep = 1;
 var cities = [];
 var citiesNum = 6;
 var rocketLaunchers = [];
 var rocketLaunchersNum = 3;
 var missiles = [];
 var explosions = [];
-var explosionsRadius = 15;
-var explosionStep = 2;
+var explosionsRadius = 20;
+var explosionStep = 1;
 var missilesNum = 15;
 var velocity = 3;
 var tick = 0;
@@ -29,6 +32,8 @@ var tick = 0;
 var gameLoop = function(){
 	window.requestAnimFrame(gameLoop);
 	draw();
+	generateEnemies();
+	detectCollisions();
 }
 
 var setup = function(){
@@ -59,9 +64,57 @@ var setup = function(){
 	});
 };
 
+var detectCollisions = function(){
+	for(var i = 0; i < enemies.length; i++){
+	//enemy - cities collisions
+		for(var j = 0; j < cities.length; j++){
+			if(enemies[i].x > cities[j].ax &&
+			   enemies[i].x < (cities[j].ax+cities[j].width) &&
+			   enemies[i].y > cities[j].ay &&
+			   enemies[i].y < (cities[j].ay+cities[j].height)){
+			   		explodeEnemies(enemies[i].x, enemies[i].y);
+					cities.splice(j,1);
+					enemies.splice(i,1);
+					console.log("city destroyed");
+			}
+		}
+	}
+	for(var i = 0; i < enemies.length; i++){
+		//enemy - rocket launchers collisions
+		for(var j = 0; j < rocketLaunchers.length; j++){
+			if(enemies[i].x > rocketLaunchers[j].ax &&
+			   enemies[i].x < (rocketLaunchers[j].cx) &&
+			   enemies[i].y > rocketLaunchers[j].by &&
+			   enemies[i].y < (rocketLaunchers[j].cy)){
+			   		explodeEnemies(enemies[i].x, enemies[i].y);
+					rocketLaunchers.splice(j,1);
+					enemies.splice(i,1);
+					console.log("rocketLauncher destroyed");
+			}
+		}
+	}
+	for(var i = 0; i < enemies.length; i++){
+	//enemy - missiles collisions
+		for(var j = 0; j < explosions.length; j++){
+			if(enemies[i].x > (explosions[j].x - explosions[j].radius) &&
+			   enemies[i].x < (explosions[j].x + explosions[j].radius) &&
+			   enemies[i].y > (explosions[j].y - explosions[j].radius) &&
+			   enemies[i].y < (explosions[j].y + explosions[j].radius)){
+			   		explodeEnemies(enemies[i].x, enemies[i].y);
+					enemies.splice(i,1);
+					console.log("enemy shoot down");
+			}
+		}
+	}
+}
+
+var explodeEnemies = function(x, y){
+	enemyExplosions.push({'x':x, 'y':y, 'radius':0});
+}
+
 var shoot = function(x, y){
 	//choose start point
-	console.log("x: " + x + " y: " + y);
+	//console.log("x: " + x + " y: " + y);
 	var startX;
 	var startY = rocketLaunchers[0].by;
 	if( rocketLaunchers.length > 1){
@@ -173,16 +226,30 @@ var draw = function(){
 		}
 	}
 
+	//draw enemies explosions
+	for(var i = 0; i < enemyExplosions.length; i++){
+		if(enemyExplosions[i].radius > enemyExplosionsRadius){
+			enemyExplosions.splice(i, 1);
+		} else{ 
+			context.fillStyle = "white";
+			enemyExplosions[i].radius += enemyExplosionStep;
+			context.moveTo(enemyExplosions[i].x,enemyExplosions[i].y);
+			context.arc(enemyExplosions[i].x, enemyExplosions[i].y, enemyExplosions[i].radius, 0 ,Math.PI*2,false);
+			context.fill();
+		}
+	}
+}
+
+var generateEnemies = function(){
 	if (tick % nextEnemy == 0 && enemiesNum > 0){
 		shootEnemies();
 		//console.log("shoot enemy");
-		nextEnemy = Math.floor(Math.random()*enemyInterval + 1000)
-		console.log(tick+" "+nextEnemy);
+		nextEnemy = Math.floor(Math.random()*enemyInterval + 500)
+		//console.log(tick+" "+nextEnemy);
 	}
 
 	tick += 1;
 }
-
 var shootEnemies = function(){
 	var x = Math.random()*canvas.width;
 	var velX = (Math.random() - 0.5)*enemyXFactor;
