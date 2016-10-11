@@ -10,13 +10,21 @@ var canvas = document.getElementById('game');
 var context = canvas.getContext('2d');
 var enemies = [];
 var enemiesNum = 10;
+var enemyInterval = 1000;
+var nextEnemy = Math.floor(Math.random()*enemyInterval);
+var enemyVelocity = 0.5;
+var enemyXFactor = 0.15;
 var cities = [];
 var citiesNum = 6;
 var rocketLaunchers = [];
 var rocketLaunchersNum = 3;
 var missiles = [];
+var explosions = [];
+var explosionsRadius = 15;
+var explosionStep = 2;
 var missilesNum = 15;
 var velocity = 3;
+var tick = 0;
 
 var gameLoop = function(){
 	window.requestAnimFrame(gameLoop);
@@ -74,7 +82,7 @@ var shoot = function(x, y){
 			startX = rocketLaunchers[2].bx;
 		}		
 	}
-	console.log("startx: "+startX+" starty: "+startY);
+	//console.log("startx: "+startX+" starty: "+startY);
 	var difx = x - startX;
 	var dify = y - startY;
 
@@ -84,9 +92,9 @@ var shoot = function(x, y){
 	var velx = difx/(Math.abs(difx) + Math.abs(dify))*velocity;
 	var vely = dify/(Math.abs(difx) + Math.abs(dify))*velocity;
 
-	console.log("velx: "+velx+" vely: "+vely);
+	//console.log("velx: "+velx+" vely: "+vely);
 
-	missiles.push({'startX':startX, 'startY':startY, 'velx':velx, 'vely':vely, 'x':startX, 'y':startY});
+	missiles.push({'startX':startX, 'startY':startY, 'velx':velx, 'vely':vely, 'x':startX, 'y':startY, 'endX':x, 'endY':y});
 	missilesNum -= 1;
 }
 
@@ -101,10 +109,12 @@ var draw = function(){
 	//draw rocketLaunchers
 	for (var i = 0; i < rocketLaunchers.length; i++){
 		context.fillStyle = "orange";
+		context.moveTo(rocketLaunchers[i].ax,rocketLaunchers[i].ay)
 		context.beginPath();
 		context.moveTo(rocketLaunchers[i].ax,rocketLaunchers[i].ay);
 		context.lineTo(rocketLaunchers[i].bx,rocketLaunchers[i].by);
 		context.lineTo(rocketLaunchers[i].cx,rocketLaunchers[i].cy);
+		context.fillStyle = "orange";
 		context.fill();
 	}
 	//draw cities
@@ -116,8 +126,13 @@ var draw = function(){
 	for(var i = 0; i < missiles.length; i++){
 		if(missiles[i].x > canvas.width || missiles[i].x < 0 || missiles[i].y < 0){
 			missiles.splice(i, 1);
-		} else {
-			console.log("draw");
+		} else  if (missiles[i].y < missiles[i].endY) {
+			explode(missiles[i].x, missiles[i].y);
+			missiles.splice(i, 1);
+			//animate explosion
+		}
+		else{
+			//console.log("draw");
 			context.strokeStyle = "white";
 			context.beginPath();
 			context.moveTo(missiles[i].startX,missiles[i].startY);
@@ -128,6 +143,61 @@ var draw = function(){
 			missiles[i].y += missiles[i].vely;
 		}
 	}
+	//draw explosions
+	for(var i = 0; i < explosions.length; i++){
+		if(explosions[i].radius > explosionsRadius){
+			explosions.splice(i, 1);
+		} else{ 
+			context.fillStyle = "orange";
+			explosions[i].radius += explosionStep;
+			context.moveTo(explosions[i].x,explosions[i].y);
+			context.arc(explosions[i].x, explosions[i].y, explosions[i].radius, 0 ,Math.PI*2,false);
+			context.fill();
+		}
+	}
+
+	//draw enemies
+	for(var i = 0; i < enemies.length; i++){
+		if(enemies[i].y > canvas.height){
+			enemies.splice(i, 1);
+		} else{
+			//console.log("draw");
+			context.strokeStyle = "red";
+			context.beginPath();
+			context.moveTo(enemies[i].startX,enemies[i].startY);
+			context.lineTo(enemies[i].x,enemies[i].y);
+			context.stroke();
+
+			enemies[i].x += enemies[i].velX;
+			enemies[i].y += enemies[i].velY;			
+		}
+	}
+
+	if (tick % nextEnemy == 0 && enemiesNum > 0){
+		shootEnemies();
+		//console.log("shoot enemy");
+		nextEnemy = Math.floor(Math.random()*enemyInterval + 1000)
+		console.log(tick+" "+nextEnemy);
+	}
+
+	tick += 1;
+}
+
+var shootEnemies = function(){
+	var x = Math.random()*canvas.width;
+	var velX = (Math.random() - 0.5)*enemyXFactor;
+	if( x < 150 && velX < 0 )
+		velX = velX*(-1);
+	if( x > 350 && velX > 0)
+		velX = velX*(-1);
+	var velY = enemyVelocity - Math.abs(velX);
+	enemies.push({'startX':x, 'startY':0, 'x':x, 'y': 0, 'velX':velX, 'velY':velY});
+	enemiesNum = enemiesNum - 1;
+	//console.log("enemy x: "+x+" velx "+velX+" velY "+velY);
+}
+
+var explode = function(x, y){
+	explosions.push({'x':x, 'y':y, 'radius':0});
 }
 
 // shim layer with setTimeout fallback 
