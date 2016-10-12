@@ -1,7 +1,6 @@
 $(document).ready(function(){
 	console.log("ready");
 	setup();
-	window.requestAnimFrame(gameLoop);
 });
 
 var canvas = document.getElementById('game');
@@ -28,22 +27,73 @@ var explosionStep = 1;
 var missilesNum = 15;
 var velocity = 3;
 var tick = 0;
+var score = 0;
+var level = 1;
+var initiated = false;
+var ended = false;
+//-------------------
+var missilesB = 15;
+var enemiesB = 10;
 
 var gameLoop = function(){
-	window.requestAnimFrame(gameLoop);
-	draw();
-	drawText();
-	generateEnemies();
-	detectCollisions();
+	if(!ended){
+		window.requestAnimFrame(gameLoop);
+		drawBackground();
+		draw();
+		drawText();
+		generateEnemies();
+		detectCollisions();
+		checkVictory();
+	}
+}
+
+var checkVictory = function(){
+	if(enemiesNum == 0 && enemies.length == 0 && cities.length > 0 && rocketLaunchers.length > 0){
+		alert("You won! Prepare for next level");
+		level += 1;
+		initLevel(level);
+	} else if(cities.length == 0 || rocketLaunchers.length == 0){
+		alert("Game Over");
+		ended = true;
+		setup();
+	}
 }
 
 var setup = function(){
+	level = 1;
+	score = 0;
+	enemiesNum = 10;
+    enemyInterval = 200;
+    nextEnemy = Math.floor(Math.random()*enemyInterval + 800);
+    enemyVelocity = 1;
+    enemyXFactor = 0.8;
+    enemyExplosions = [];
+    enemyExplosionsRadius = 20;
+    enemyExplosionStep = 1;
+    cities = [];
+    citiesNum = 6;
+    rocketLaunchers = [];
+    rocketLaunchersNum = 3;
+    missiles = [];
+    explosions = [];
+    explosionsRadius = 20;
+    explosionStep = 1;
+    missilesNum = 15;
+    velocity = 3;
+    tick = 0;
+    score = 0;
+    level = 1;
+    initiated = false;
+    ended = false;
+
 	//create rocketLaunchers
+	rocketLaunchers = [];
 	rocketLaunchers.push({'ax': 10, 'ay': 470, 'bx': 30, 'by': 440, 'cx': 50, 'cy': 470});
 	rocketLaunchers.push({'ax': 230, 'ay': 470, 'bx': 250, 'by': 440, 'cx': 270, 'cy': 470});
 	rocketLaunchers.push({'ax': 450, 'ay': 470, 'bx': 470, 'by': 440, 'cx': 490, 'cy': 470});
 
 	//create cities
+	cities = [];
 	cities.push({'ax': 70, 'ay': 475, 'height': 15, 'width': 40});
 	cities.push({'ax': 120, 'ay': 475, 'height': 15, 'width': 40});
 	cities.push({'ax': 170, 'ay': 475, 'height': 15, 'width': 40});
@@ -51,19 +101,47 @@ var setup = function(){
 	cities.push({'ax': 350, 'ay': 475, 'height': 15, 'width': 40});
 	cities.push({'ax': 410, 'ay': 475, 'height': 15, 'width': 40});
 
+	drawBackground();
+
+	context.fillStyle = "gray";
+	context.font = "26px Courier New";
+	context.fillText("MISSILE COMMAND", 110, 130);
+	context.font = "16px Courier New";
+	context.fillText("Click to continue", 150, 180);
+
 	$('#game').click(function(event){
-		//console.log(event);
-		//var posX = $(this).position().left;
-		//var posY = $(this).position().top;
-		//console.log('posX '+posX+" posY "+posY);
-	    var rect = canvas.getBoundingClientRect();
-	    var x = event.clientX - rect.left;
-	    var y = event.clientY - rect.top;
-	    if (missilesNum > 0){
-	    	shoot(x,y);
-	    }
-	});
+		if(!initiated){
+			initLevel(level);
+			initiated = true;
+			window.requestAnimFrame(gameLoop);
+				$('#game').click(function(event){
+				//console.log(event);
+				//var posX = $(this).position().left;
+				//var posY = $(this).position().top;
+				//console.log('posX '+posX+" posY "+posY);
+			    var rect = canvas.getBoundingClientRect();
+			    var x = event.clientX - rect.left;
+			    var y = event.clientY - rect.top;
+			    if (missilesNum > 0){
+			    	shoot(x,y);
+			    }
+			});	
+		}
+	});	
 };
+
+var initLevel = function(level){
+  enemiesNum = enemiesB + level;
+  enemyInterval = enemyInterval - 20;
+  enemyVelocity += 0.1;
+  enemyXFactor += 0.05;
+  explosionsRadius -= 1;
+  missilesNum = missilesB + 1;
+  missiles = [];
+  explosions = [];
+  enemies = [];
+  enemyExplosions = [];
+}
 
 var detectCollisions = function(){
 	for(var i = 0; i < enemies.length; i++){
@@ -110,6 +188,7 @@ var detectCollisions = function(){
 					i = i - 1;
 					j = j - 1;
 					console.log("enemy shoot down");
+					score = score + level;
 			}
 		}
 	}
@@ -162,10 +241,15 @@ var shoot = function(x, y){
 }
 
 var drawText = function(){
-	
+	context.fillStyle = "gray";
+	context.font = "18px Courier New";
+	context.fillText("Rockets: "+missilesNum, 30, 30);
+	context.fillText("Enemies: "+enemiesNum, 370, 30);
+	context.fillText("Score: "+score, 160, 30);
+	context.fillText("Level: "+level, 260, 30);	
 }
 
-var draw = function(){
+var drawBackground = function(){
 	context.fillStyle = "black";
 	context.fillRect(0,0,canvas.width, canvas.height);
 
@@ -189,6 +273,8 @@ var draw = function(){
 		context.fillStyle = "blue";
 		context.fillRect(cities[i].ax, cities[i].ay, cities[i].width, cities[i].height);		
 	}
+}
+var draw = function(){
 	//draw missiles
 	for(var i = 0; i < missiles.length; i++){
 		if(missiles[i].x > canvas.width || missiles[i].x < 0 || missiles[i].y < 0){
