@@ -31,31 +31,52 @@ var score = 0;
 var level = 1;
 var initiated = false;
 var ended = false;
+var nextLevel = false;
 //-------------------
 var missilesB = 15;
 var enemiesB = 10;
+var requestId;
 
 var gameLoop = function(){
-	if(!ended){
-		window.requestAnimFrame(gameLoop);
-		drawBackground();
-		draw();
-		drawText();
-		generateEnemies();
-		detectCollisions();
-		checkVictory();
+	if(nextLevel){
+		window.cancelAnimationFrame(requestId);
+        requestId = undefined;
+		
+		initLevel(level);
+		nextLevel = false;
+	
+		gameLoop();
+	} else 	if(ended){
+		setup();
+	} else if(!ended){
+		if(!nextLevel){
+			requestId = window.requestAnimFrame(gameLoop);
+			drawBackground();
+			draw();
+			drawText();
+			generateEnemies();
+			detectCollisions();
+			checkVictory();
+		}
 	}
 }
 
 var checkVictory = function(){
 	if(enemiesNum == 0 && enemies.length == 0 && cities.length > 0 && rocketLaunchers.length > 0){
 		alert("You won! Prepare for next level");
+		
+		//window.cancelAnimationFrame(requestId);
+        //requestId = undefined;
+		
 		level += 1;
-		initLevel(level);
+		nextLevel = true;
+		//initLevel(level);
+
+		//requestId = window.requestAnimFrame(gameLoop);
+
 	} else if(cities.length == 0 || rocketLaunchers.length == 0){
 		alert("Game Over");
 		ended = true;
-		setup();
 	}
 }
 
@@ -113,12 +134,14 @@ var setup = function(){
 		if(!initiated){
 			initLevel(level);
 			initiated = true;
+			console.log("clicked when game not initiated");
 			window.requestAnimFrame(gameLoop);
 				$('#game').click(function(event){
 				//console.log(event);
 				//var posX = $(this).position().left;
 				//var posY = $(this).position().top;
 				//console.log('posX '+posX+" posY "+posY);
+				console.log("clicked when game initiated");
 			    var rect = canvas.getBoundingClientRect();
 			    var x = event.clientX - rect.left;
 			    var y = event.clientY - rect.top;
@@ -141,6 +164,7 @@ var initLevel = function(level){
   explosions = [];
   enemies = [];
   enemyExplosions = [];
+  console.log("init level: enemiesNum "+enemiesNum + " enemiesLength "+enemies.length);
 }
 
 var detectCollisions = function(){

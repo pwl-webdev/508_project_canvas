@@ -53,9 +53,9 @@ body, html{
 	height: 100%;
 }
 header{
-	height: 20px;
+	height: 150px;
 	width: 100%;
-	background-color: yellow;
+	/*background-color: yellow;*/
 }
 .container{
 	width: 500px;
@@ -65,4 +65,15 @@ header{
 #game{
 	width: 500px;
 	height: 500px;
+}
+footer{
+	position: relative;
+	bottom: -10%;
+	margin: auto;
+	font-size: 12px;
+	font-family: "Helvetica";
+	color: rgb(100,100,100);
+	left: 0;
+	right: 0;
+	text-align: center;
 }
